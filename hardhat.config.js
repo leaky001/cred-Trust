@@ -1,0 +1,20 @@
+require("dotenv").config();
+require("@nomicfoundation/hardhat-toolbox");
+
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: "0.8.24",
+  networks: {
+    hardhat: {
+      chainId: 31337,
+    },
+    creditcoin_local: {
+      url: process.env.CC_RPC_URL || "http://127.0.0.1:9944",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+    creditcoin_testnet: {
+      url: process.env.CC_TESTNET_RPC_URL || "https://rpc.cc3-testnet.creditcoin.network",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+  },
+};

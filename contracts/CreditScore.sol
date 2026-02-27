@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+/**
+ * @title CreditScore
+ * @notice Stores and computes on-chain credit scores based on repayment behaviour
+ */
+contract CreditScore {
+    struct UserRecord {
+        uint256 totalLoans;
+        uint256 completedLoans;
+        uint256 onTimeRepayments;
+        uint256 defaults;
+        uint256 totalBorrowed;
+        uint256 score;
+    }
+
+    mapping(address => UserRecord) public records;
+
+    uint256 public constant BASE_SCORE = 500;
+    uint256 public constant COMPLETED_WEIGHT = 20;
+    uint256 public constant ON_TIME_MULTIPLIER = 2;
+    uint256 public constant DEFAULT_PENALTY = 50;
+
+    address public loanFactory;
+    mapping(address => bool) public approvedLoans;
+
+    modifier onlyLoanFactoryOrLoan() {
+        require(
+            msg.sender == loanFactory || approvedLoans[msg.sender],
+            "Only LoanFactory or Loan"
+        );
+        _;
+    }
+
+    modifier onlyLoanFactory() {
+        require(msg.sender == loanFactory, "Only LoanFactory");
+        _;
+    }
+
+    function addApprovedLoan(address loan) external onlyLoanFactory {
+        approvedLoans[loan] = true;
+    }
+
+    constructor(address _loanFactory) {
+        loanFactory = _loanFactory;
+    }
+
+    function getScore(address user) external view returns (uint256) {
+        return records[user].score == 0 ? BASE_SCORE : records[user].score;
+    }
+
+    function recordRepayment(
+        address user,
+        uint256 principal,
+        bool onTime
+    ) external onlyLoanFactoryOrLoan {
+        UserRecord storage r = records[user];
+        r.completedLoans += 1;
+        if (onTime) r.onTimeRepayments += 1;
+        r.totalBorrowed += principal;
+        _updateScore(user);
+    }
+
+    function recordDefault(address user, uint256 principal) external onlyLoanFactoryOrLoan {
+        UserRecord storage r = records[user];
+        r.defaults += 1;
+        r.totalBorrowed += principal;
+        _updateScore(user);
+    }
+
+    function recordLoanRequest(address user, uint256 principal) external onlyLoanFactory {
+        records[user].totalLoans += 1;
+    }
+
+    function _updateScore(address user) internal {
+        UserRecord storage r = records[user];
+        uint256 onTimeRate = r.completedLoans > 0
+            ? (r.onTimeRepayments * 100) / r.completedLoans
+            : 100;
+        uint256 score = BASE_SCORE;
+        score += r.completedLoans * COMPLETED_WEIGHT;
+        score += (onTimeRate * ON_TIME_MULTIPLIER) / 10;
+        if (r.defaults > 0) {
+            score -= r.defaults * DEFAULT_PENALTY;
+        }
+        r.score = score > 0 ? score : 0;
+    }
+}
