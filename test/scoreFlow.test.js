@@ -20,7 +20,7 @@ describe("Integration: scoring flow", function () {
     const interestBps = 500; // 5%
     const durationDays = 1;
 
-  const tx = await factory.connect(borrower).createLoan(principal, interestBps, durationDays);
+  const tx = await factory.connect(borrower).createLoan(principal, durationDays);
   await tx.wait();
 
   // loanId can be retrieved from factory.loanCount() - 1
@@ -35,12 +35,11 @@ describe("Integration: scoring flow", function () {
     const fundTx = await loan.connect(lender).fund({ value: principal });
     await fundTx.wait();
 
-    // Borrower repays principal + interest
-    const interest = principal * BigInt(interestBps) / 10000n;
-    const total = principal + interest;
-
     const loanBorrower = Loan.attach(loanAddr).connect(borrower);
-    const repayTx = await loanBorrower.repay({ value: total });
+    
+    // Contract calculates dynamically
+    const actualTotal = await loanBorrower.getTotalRepayment();
+    const repayTx = await loanBorrower.repay({ value: actualTotal });
     await repayTx.wait();
 
     // Check credit score increased (> BASE_SCORE = 500)

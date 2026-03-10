@@ -11,10 +11,14 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-lg p-6 bg-surface",
-          variant === "elevated" && "shadow-elevation-1",
-          variant === "outlined" && "border border-gray-200",
-          variant === "flat" && "bg-surface-secondary",
+          "rounded-2xl p-6",
+          "bg-surface dark:bg-surface",
+          variant === "elevated" && [
+            "border border-border/60 dark:border-white/[0.07]",
+            "shadow-elevation-2 dark:shadow-black/30",
+          ],
+          variant === "outlined" && "border border-border dark:border-white/[0.08]",
+          variant === "flat" && "bg-background dark:bg-background",
           className
         )}
         {...props}
@@ -27,7 +31,7 @@ Card.displayName = "Card";
 
 const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("mb-4", className)} {...props} />
+    <div ref={ref} className={cn("mb-5", className)} {...props} />
   )
 );
 CardHeader.displayName = "CardHeader";
@@ -36,7 +40,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingEleme
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn("text-h3 font-semibold text-gray-900", className)}
+      className={cn("text-h3 font-bold tracking-tight text-gray-900 dark:text-white", className)}
       {...props}
     />
   )

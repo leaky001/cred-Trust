@@ -21,7 +21,6 @@ describe("CredTrust", function () {
       const [borrower] = await ethers.getSigners();
       await factory.connect(borrower).createLoan(
         ethers.parseEther("100"),
-        500, // 5%
         30
       );
       const loanAddr = await factory.getLoan(0);
@@ -35,7 +34,6 @@ describe("CredTrust", function () {
       const [borrower, lender] = await ethers.getSigners();
       await factory.connect(borrower).createLoan(
         ethers.parseEther("10"),
-        500, // 5%
         7
       );
       const loanAddr = await factory.getLoan(1);

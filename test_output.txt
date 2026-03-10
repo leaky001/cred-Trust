@@ -1,0 +1,50 @@
+﻿[dotenv@17.3.1] injecting env (2) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+
+  CredTrust
+    LoanFactory
+      Γ£ö should deploy CreditScore
+      1) should create a loan
+    Loan lifecycle
+      2) should fund and repay
+
+  Integration: scoring flow
+    3) creates a loan, funds it, repays it, and updates credit score
+
+
+  1 passing (1s)
+  3 failing
+
+  1) CredTrust
+       LoanFactory
+         should create a loan:
+     Error: no matching fragment (operation="fragment", info={ "args": [ 100000000000000000000, 500, 30 ], "key": "createLoan" }, code=UNSUPPORTED_OPERATION, version=6.16.0)
+      at makeError (node_modules\ethers\src.ts\utils\errors.ts:698:21)
+      at assert (node_modules\ethers\src.ts\utils\errors.ts:719:25)
+      at getFragment (node_modules\ethers\src.ts\contract\contract.ts:270:15)
+      at Proxy.createLoan (node_modules\ethers\src.ts\contract\contract.ts:350:26)
+      at Context.<anonymous> (test\Loan.test.js:22:39)
+
+  2) CredTrust
+       Loan lifecycle
+         should fund and repay:
+     Error: no matching fragment (operation="fragment", info={ "args": [ 10000000000000000000, 500, 7 ], "key": "createLoan" }, code=UNSUPPORTED_OPERATION, version=6.16.0)
+      at makeError (node_modules\ethers\src.ts\utils\errors.ts:698:21)
+      at assert (node_modules\ethers\src.ts\utils\errors.ts:719:25)
+      at getFragment (node_modules\ethers\src.ts\contract\contract.ts:270:15)
+      at Proxy.createLoan (node_modules\ethers\src.ts\contract\contract.ts:350:26)
+      at Context.<anonymous> (test\Loan.test.js:36:39)
+
+  3) Integration: scoring flow
+       creates a loan, funds it, repays it, and updates credit score:
+     Error: VM Exception while processing transaction: reverted with reason string 'Insufficient repayment'
+    at Loan.repay (contracts/Loan.sol:105)
+    at EdrProviderWrapper.request (node_modules\hardhat\src\internal\hardhat-network\provider\provider.ts:453:41)
+    at HardhatEthersSigner.sendTransaction (node_modules\@nomicfoundation\hardhat-ethers\src\signers.ts:185:18)
+    at send (node_modules\ethers\src.ts\contract\contract.ts:313:20)
+    at Proxy.repay (node_modules\ethers\src.ts\contract\contract.ts:352:16)
+    at Context.<anonymous> (test\scoreFlow.test.js:43:21)
+  
+
+
+

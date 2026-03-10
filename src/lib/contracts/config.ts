@@ -8,6 +8,7 @@ export const CONTRACT_ADDRESSES = {
 } as const;
 
 export const SUPPORTED_CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || "0";
+export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8545";
 
 export const isContractConfigured = (): boolean =>
   Boolean(CONTRACT_ADDRESSES.creditScore && CONTRACT_ADDRESSES.loanFactory);

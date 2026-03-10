@@ -20,18 +20,22 @@ contract Loan {
     }
 
     address public borrower;
-    address public lender;
     uint256 public principal;
     uint256 public interestRateBps; // basis points, e.g. 500 = 5%
     uint256 public durationDays;
     uint256 public fundedAt;
     uint256 public repaymentDeadline;
+    uint256 public totalFunded;
+
+    address[] public lenders;
+    mapping(address => uint256) public contributions;
 
     Status public status;
     address public factory;
     ICreditScore public creditScore;
 
     event LoanFunded(address indexed lender, uint256 amount);
+    event LoanPartiallyFunded(address indexed lender, uint256 amount, uint256 remaining);
     event LoanRepaid(address indexed borrower, uint256 principal, uint256 interest);
     event LoanDefaulted(address indexed borrower);
 
@@ -64,15 +68,33 @@ contract Loan {
 
     function fund() external payable {
         require(status == Status.Requested, "Invalid status");
-        require(msg.value >= principal, "Insufficient funds");
         require(msg.sender != borrower, "Borrower cannot fund own loan");
+        require(msg.value > 0, "No value sent");
 
-        lender = msg.sender;
-        fundedAt = block.timestamp;
-        repaymentDeadline = block.timestamp + (durationDays * 1 days);
-        status = Status.Active;
+        uint256 remaining = principal - totalFunded;
+        uint256 amountToAccept = msg.value > remaining ? remaining : msg.value;
 
-        emit LoanFunded(lender, principal);
+        if (contributions[msg.sender] == 0) {
+            lenders.push(msg.sender);
+        }
+        contributions[msg.sender] += amountToAccept;
+        totalFunded += amountToAccept;
+
+        if (totalFunded == principal) {
+            status = Status.Active;
+            fundedAt = block.timestamp;
+            repaymentDeadline = block.timestamp + (durationDays * 1 days);
+            emit LoanFunded(msg.sender, amountToAccept);
+        } else {
+            emit LoanPartiallyFunded(msg.sender, amountToAccept, principal - totalFunded);
+        }
+
+        // Refund excess if borrower sent more than needed to fill principal
+        if (msg.value > amountToAccept) {
+            uint256 excess = msg.value - amountToAccept;
+            (bool refund,) = msg.sender.call{value: excess}("");
+            require(refund, "Refund failed");
+        }
     }
 
     function repay() external payable onlyBorrower {
@@ -87,8 +109,16 @@ contract Loan {
 
         creditScore.recordRepayment(borrower, principal, onTime);
 
-        (bool sent,) = lender.call{value: total}("");
-        require(sent, "Transfer failed");
+        // Distribute to all lenders
+        for (uint256 i = 0; i < lenders.length; i++) {
+            address lender = lenders[i];
+            uint256 share = contributions[lender];
+            uint256 lenderInterest = (share * interestRateBps) / 10000;
+            uint256 lenderTotal = share + lenderInterest;
+            
+            (bool sent,) = lender.call{value: lenderTotal}("");
+            require(sent, "Transfer failed to lender");
+        }
 
         uint256 excess = msg.value - total;
         if (excess > 0) {
@@ -99,16 +129,31 @@ contract Loan {
         emit LoanRepaid(borrower, principal, interest);
     }
 
-    function markDefaulted() external onlyFactory {
+    uint256 public constant GRACE_PERIOD = 3 days;
+
+    function markDefaulted() external {
         require(status == Status.Active, "Invalid status");
-        require(block.timestamp > repaymentDeadline, "Not yet overdue");
+        
+        if (msg.sender != factory) {
+            require(block.timestamp > repaymentDeadline + GRACE_PERIOD, "Grace period active");
+        } else {
+            require(block.timestamp > repaymentDeadline, "Not yet overdue");
+        }
 
         status = Status.Defaulted;
         creditScore.recordDefault(borrower, principal);
 
-        if (address(this).balance > 0) {
-            (bool sent,) = lender.call{value: address(this).balance}("");
-            require(sent, "Transfer failed");
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            // Distribute remaining balance across lenders proportionally
+            for (uint256 i = 0; i < lenders.length; i++) {
+                address lender = lenders[i];
+                uint256 share = (contributions[lender] * balance) / principal;
+                if (share > 0) {
+                    (bool sent,) = lender.call{value: share}("");
+                    require(sent, "Transfer failed to lender");
+                }
+            }
         }
 
         emit LoanDefaulted(borrower);
@@ -117,5 +162,9 @@ contract Loan {
     function getTotalRepayment() external view returns (uint256) {
         uint256 interest = (principal * interestRateBps) / 10000;
         return principal + interest;
+    }
+
+    function getLendersCount() external view returns (uint256) {
+        return lenders.length;
     }
 }

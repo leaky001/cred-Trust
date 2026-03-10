@@ -86,4 +86,23 @@ contract CreditScore {
         }
         r.score = score > 0 ? score : 0;
     }
+
+    /**
+     * @notice Calculates the interest rate in BPS based on user credit score
+     * @param user The address of the borrower
+     * @return interestRateBps The calculated interest rate in basis points
+     */
+    function calculateInterestRate(address user) external view returns (uint256 interestRateBps) {
+        uint256 score = this.getScore(user);
+        
+        if (score >= 800) {
+            return 400; // 4%
+        } else if (score >= 600) {
+            return 800; // 8%
+        } else if (score >= 400) {
+            return 1200; // 12%
+        } else {
+            return 2000; // 20%
+        }
+    }
 }

@@ -8,7 +8,9 @@ export type LoanStatus =
 export interface Loan {
   id: string;
   borrower: string;
-  lender: string | null;
+  lender: string | null; // Keeps backward compatibility (first lender or null)
+  lendersCount: number;
+  totalFunded: string;
   principal: string;
   remaining?: string;
   interestRate: string;
@@ -21,6 +23,6 @@ export interface Loan {
 
 export interface CreateLoanParams {
   amount: string;
-  interestRate: string;
+  interestRate?: string;
   duration: number;
 }

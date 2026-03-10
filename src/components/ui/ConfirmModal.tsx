@@ -29,11 +29,11 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-lg">
-        <h3 className="text-h5 mb-2">{title}</h3>
-  {description && <p className="text-small text-gray-600 mb-4">{description}</p>}
-  {children}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative z-10 w-full max-w-lg rounded-xl bg-surface dark:bg-gray-900 p-6 shadow-elevation-4 border dark:border-gray-800">
+        <h3 className="text-h4 mb-2 font-bold text-gray-900 dark:text-white">{title}</h3>
+        {description && <p className="text-small text-gray-600 dark:text-gray-400 mb-6">{description}</p>}
+        {children}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" size="md" onClick={onCancel}>
             {cancelLabel}

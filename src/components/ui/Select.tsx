@@ -37,7 +37,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={selectId}
-            className="text-small font-medium text-gray-700"
+            className="text-small font-medium text-gray-700 dark:text-gray-300"
           >
             {label}
           </label>
@@ -46,13 +46,13 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={cn(
-            "h-10 w-full rounded-md border bg-surface px-3 py-2 text-body",
+            "h-10 w-full rounded-md border bg-surface dark:bg-gray-900 px-3 py-2 text-body dark:text-white",
             "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-0",
-            "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-gray-100",
+            "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-950",
             "min-h-[44px]",
             error
               ? "border-error focus:ring-error"
-              : "border-gray-300 hover:border-gray-400",
+              : "border-gray-200 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-700",
             className
           )}
           aria-invalid={!!error}

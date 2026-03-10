@@ -6,359 +6,872 @@ import {
   Shield,
   TrendingUp,
   Wallet,
-  CircleDot,
-  CreditCard,
   Zap,
+  Globe,
+  Lock,
+  BarChart3,
+  ChevronDown,
+  CheckCircle,
+  Star,
+  Users,
 } from "lucide-react";
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ConnectPrompt } from "@/components/home/ConnectPrompt";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+// ──────────────────────────────────────────────────────────────────────────────
+// ANIMATION VARIANTS
+// ──────────────────────────────────────────────────────────────────────────────
+const easeCustom = [0.22, 1, 0.36, 1] as const;
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
 
-function HeroMotionGraphic() {
+const itemVariants = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: easeCustom } },
+};
+
+const fadeInScale = {
+  hidden: { opacity: 0, scale: 0.92 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: easeCustom } },
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// TRUSTMESH MOTION GRAPHIC
+// ──────────────────────────────────────────────────────────────────────────────
+
+function TrustMesh() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  const nodes = [
+    { id: "center", cx: 200, cy: 200, r: 28, primary: true },
+    { id: "n1", cx: 200, cy: 80, r: 16, primary: false },
+    { id: "n2", cx: 310, cy: 145, r: 14, primary: false },
+    { id: "n3", cx: 320, cy: 260, r: 18, primary: false },
+    { id: "n4", cx: 200, cy: 325, r: 14, primary: false },
+    { id: "n5", cx: 85, cy: 260, r: 16, primary: false },
+    { id: "n6", cx: 78, cy: 145, r: 12, primary: false },
+    { id: "n7", cx: 350, cy: 80, r: 10, primary: false },
+    { id: "n8", cx: 50, cy: 200, r: 10, primary: false },
+    { id: "n9", cx: 350, cy: 330, r: 10, primary: false },
+  ];
+
+  const edges = [
+    ["center", "n1"], ["center", "n2"], ["center", "n3"],
+    ["center", "n4"], ["center", "n5"], ["center", "n6"],
+    ["n1", "n2"], ["n2", "n3"], ["n3", "n4"],
+    ["n4", "n5"], ["n5", "n6"], ["n6", "n1"],
+    ["n2", "n7"], ["n5", "n8"], ["n3", "n9"],
+  ];
+
+  const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+
+  const pulseEdges = [
+    ["center", "n2"],
+    ["center", "n5"],
+    ["n1", "n2"],
+    ["n3", "n4"],
+  ];
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-      className="relative flex aspect-square w-full max-w-[260px] items-center justify-center xs:max-w-[300px] sm:max-w-[340px] md:max-w-[360px] lg:max-w-[380px] xl:max-w-[420px]"
+      transition={{ duration: 1, ease: easeCustom, delay: 0.3 }}
+      className="relative w-full max-w-[420px] mx-auto select-none"
     >
-      {/* Soft glow orbs */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-        <div className="absolute h-48 w-48 rounded-full bg-primary-500/15 blur-[50px] sm:h-56 sm:w-56 sm:blur-[60px]" />
-        <div className="absolute h-36 w-36 rounded-full bg-accent-500/12 blur-[40px] sm:h-44 sm:w-44 sm:blur-[50px]" />
+      {/* Ambient glow blobs */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute w-56 h-56 rounded-full bg-primary-500/20 dark:bg-primary-500/25 blur-[72px] animate-pulse-glow" />
+        <div className="absolute w-36 h-36 rounded-full bg-accent-500/15 dark:bg-accent-500/20 blur-[48px]"
+          style={{ transform: "translate(40px, -30px)" }} />
       </div>
 
-      <div className="relative flex h-full w-full items-center justify-center">
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full border border-primary-500/15"
-            style={{
-              width: `${48 + i * 16}%`,
-              height: `${48 + i * 16}%`,
-            }}
-            animate={{ rotate: 360 * (i % 2 === 0 ? 1 : -1) }}
-            transition={{
-              duration: 22 + i * 5,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            <motion.div
-              className="absolute left-1/2 top-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-500 shadow-glow-primary sm:size-2.5"
-              animate={{ opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
+      <svg viewBox="0 0 400 400" className="w-full h-full relative z-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="nodeGrad" cx="50%" cy="30%" r="70%">
+            <stop offset="0%" stopColor="hsl(217,91%,70%)" />
+            <stop offset="100%" stopColor="hsl(217,91%,50%)" />
+          </radialGradient>
+          <radialGradient id="nodeGradAccent" cx="50%" cy="30%" r="70%">
+            <stop offset="0%" stopColor="hsl(188,94%,65%)" />
+            <stop offset="100%" stopColor="hsl(188,94%,45%)" />
+          </radialGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+            <feFlood floodColor="hsl(217,91%,60%)" floodOpacity="0.6" result="color" />
+            <feComposite in="color" in2="blur" operator="in" result="shadow" />
+            <feMerge><feMergeNode in="shadow" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="glowAccent" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+            <feFlood floodColor="hsl(188,94%,55%)" floodOpacity="0.5" result="color" />
+            <feComposite in="color" in2="blur" operator="in" result="shadow" />
+            <feMerge><feMergeNode in="shadow" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(217,91%,60%)" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="hsl(188,94%,52%)" stopOpacity="0.3" />
+          </linearGradient>
+        </defs>
+
+        {/* Edge connections */}
+        {edges.map(([a, b]) => {
+          const na = nodeMap[a]; const nb = nodeMap[b];
+          return (
+            <line
+              key={`${a}-${b}`}
+              x1={na.cx} y1={na.cy}
+              x2={nb.cx} y2={nb.cy}
+              stroke="url(#edgeGrad)"
+              strokeWidth="1"
+              opacity="0.35"
             />
-          </motion.div>
+          );
+        })}
+
+        {/* Animated pulse along edges */}
+        {pulseEdges.map(([a, b], i) => {
+          const na = nodeMap[a]; const nb = nodeMap[b];
+          return (
+            <motion.circle
+              key={`pulse-${i}-${tick}`}
+              r="3"
+              fill="hsl(188,94%,62%)"
+              filter="url(#glowAccent)"
+              initial={{ cx: na.cx, cy: na.cy, opacity: 0.9 }}
+              animate={{ cx: nb.cx, cy: nb.cy, opacity: 0 }}
+              transition={{ duration: 1.2, delay: i * 0.35, ease: "easeIn" }}
+            />
+          );
+        })}
+
+        {/* Satellite nodes */}
+        {nodes.filter((n) => !n.primary).map((node, i) => (
+          <motion.g key={node.id}>
+            <motion.circle
+              cx={node.cx} cy={node.cy} r={node.r + 6}
+              fill="hsl(217,91%,60%)"
+              opacity={0.07}
+              animate={{ r: [node.r + 6, node.r + 10, node.r + 6] }}
+              transition={{ duration: 3 + i * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
+            />
+            <circle
+              cx={node.cx} cy={node.cy} r={node.r}
+              fill="hsl(222,47%,8%)"
+              stroke="hsl(217,91%,60%)"
+              strokeWidth="1.2"
+              strokeOpacity="0.5"
+            />
+            <motion.circle
+              cx={node.cx} cy={node.cy} r={node.r * 0.45}
+              fill="hsl(217,91%,65%)"
+              filter="url(#glow)"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2 + i * 0.4, repeat: Infinity, delay: i * 0.25 }}
+            />
+          </motion.g>
         ))}
 
-        <motion.div
-          className="relative z-10 flex size-24 items-center justify-center rounded-[16px] bg-surface shadow-elevation-3 sm:size-28 lg:size-32"
-          animate={{ y: [0, -4, 0] }}
+        {/* Central node — pulsing shield */}
+        <motion.g filter="url(#glow)">
+          {/* Outer ring */}
+          <motion.circle
+            cx={200} cy={200} r={40}
+            fill="hsl(217,91%,60%)"
+            opacity={0.08}
+            animate={{ r: [40, 50, 40] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+          />
+          {/* Middle ring */}
+          <circle cx={200} cy={200} r={34} fill="hsl(222,47%,8%)" stroke="hsl(217,91%,60%)" strokeWidth="1.5" strokeOpacity="0.7" />
+          {/* Core */}
+          <circle cx={200} cy={200} r={28} fill="url(#nodeGrad)" opacity={0.9} />
+          {/* Shield icon path — simplified */}
+          <path
+            d="M200 186 C200 186 190 190 190 198 L190 204 C190 209 195 214 200 216 C205 214 210 209 210 204 L210 198 C210 190 200 186 200 186Z"
+            fill="white"
+            opacity={0.95}
+          />
+        </motion.g>
+
+        {/* Score badge floating near center */}
+        <motion.g
+          animate={{ y: [-3, 3, -3] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <motion.div
-            className="flex size-14 items-center justify-center rounded-xl bg-primary-500/10 sm:size-16 lg:size-20"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.25 }}
-          >
-            <Shield className="size-7 text-primary-600 sm:size-8 lg:size-10" strokeWidth={1.5} />
-          </motion.div>
-        </motion.div>
-
-        <motion.div
-          className="absolute bottom-[22%] right-[12%] size-2.5 rounded-full bg-accent-500 shadow-glow-accent sm:size-3"
-          animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.15, 1] }}
-          transition={{ duration: 3, repeat: Infinity, delay: 0.6 }}
-        />
-      </div>
+          <rect x="135" y="240" width="84" height="28" rx="14" fill="hsl(222,47%,8%)" stroke="hsl(188,94%,52%)" strokeWidth="1" strokeOpacity="0.6" />
+          <text x="177" y="253" textAnchor="middle" dominantBaseline="middle" fill="hsl(188,94%,62%)" fontSize="9" fontWeight="700" fontFamily="Inter, system-ui, sans-serif" letterSpacing="0.5">
+            SCORE: 847
+          </text>
+          <circle cx="147" cy="254" r="5" fill="hsl(188,94%,52%)" opacity="0.8" />
+        </motion.g>
+      </svg>
     </motion.div>
   );
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// SECTION REVEAL
+// ──────────────────────────────────────────────────────────────────────────────
 function RevealSection({
   children,
   delay = 0,
+  className = "",
 }: {
   children: React.ReactNode;
   delay?: number;
+  className?: string;
 }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 28 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.55, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+      variants={itemVariants}
+      initial="hidden"
+      animate={inView ? "visible" : "hidden"}
+      transition={{ delay }}
+      className={className}
     >
       {children}
     </motion.div>
   );
 }
 
-export default function HomePage() {
+// ──────────────────────────────────────────────────────────────────────────────
+// CARD HOVER EFFECT
+// ──────────────────────────────────────────────────────────────────────────────
+function GlowCard({
+  children,
+  className = "",
+  glowColor = "primary",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  glowColor?: "primary" | "accent";
+}) {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-surface-secondary">
-      {/* Hero */}
-      <section className="relative mx-auto max-w-container-xl px-4 py-10 sm:px-6 sm:py-14 md:py-16 lg:px-8 lg:py-20 2xl:py-24">
-        <div className="grid min-h-0 items-center gap-8 sm:gap-10 md:gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20 2xl:gap-24">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: {},
-              visible: {
-                transition: { staggerChildren: 0.08, delayChildren: 0.15 },
-              },
-            }}
-            className="order-2 min-w-0 lg:order-1"
-          >
-            <motion.div
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 rounded-full border border-primary-500/20 bg-primary-500/5 px-3 py-1.5 text-caption font-medium text-primary-600 sm:text-small"
-            >
-              <CircleDot className="size-3.5 sm:size-4" />
-              Decentralised Credit Infrastructure
-            </motion.div>
-            <motion.h1
-              variants={fadeUp}
-              className="mt-5 text-h2 font-bold leading-tight tracking-tight text-gray-900 sm:text-h1 sm:leading-[1.2] lg:text-[32px] lg:leading-[40px]"
-            >
-              Reputation-Based Lending
-              <br />
-              <span className="text-primary-600">Without Heavy Collateral</span>
-            </motion.h1>
-            <motion.p
-              variants={fadeUp}
-              className="mt-4 max-w-[38ch] text-body leading-relaxed text-gray-600 sm:mt-5 sm:text-body-lg"
-            >
-              CredTrust is a decentralised credit infrastructure on Creditcoin. Build your on-chain reputation, access capital, or earn yield as a lender—all with transparent, trustless smart contracts.
-            </motion.p>
-            <motion.div
-              variants={fadeUp}
-              className="mt-8 flex flex-col flex-wrap gap-4 sm:mt-10 sm:flex-row sm:items-center"
-            >
-              <ConnectPrompt />
-              <Link href="/loans" className="inline-flex">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  rightIcon={<ArrowRight className="size-5" />}
-                >
-                  Browse Loan Requests
-                </Button>
-              </Link>
-            </motion.div>
-          </motion.div>
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ duration: 0.25, ease: easeCustom }}
+      className={`relative group overflow-hidden rounded-2xl glass-card p-6 transition-shadow duration-300
+        hover:shadow-glow-${glowColor} ${className}`}
+    >
+      {/* Subtle inner glare */}
+      <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background: `radial-gradient(circle at 50% 0%, hsl(var(--${glowColor === "primary" ? "primary" : "accent"}) / 0.08) 0%, transparent 70%)`,
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+}
 
+// ──────────────────────────────────────────────────────────────────────────────
+// STAT COUNTER
+// ──────────────────────────────────────────────────────────────────────────────
+function StatCard({ value, label, icon: Icon }: { value: string; label: string; icon: React.ElementType }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, ease: easeCustom }}
+      className="flex flex-col items-center gap-2 text-center"
+    >
+      <div className="flex size-10 items-center justify-center rounded-xl bg-primary-500/10 dark:bg-primary-400/10">
+        <Icon className="size-5 text-primary-500 dark:text-primary-400" strokeWidth={1.5} />
+      </div>
+      <div className="text-h2 font-bold tracking-tight text-gray-900 dark:text-white">{value}</div>
+      <div className="text-small text-gray-500 dark:text-gray-400">{label}</div>
+    </motion.div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MAIN PAGE
+// ──────────────────────────────────────────────────────────────────────────────
+export default function HomePage() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+
+  return (
+    <div className="relative min-h-screen overflow-x-hidden">
+      {/* Global ambient background */}
+      <div className="fixed inset-0 -z-10 bg-background" />
+      <div
+        className="fixed inset-0 -z-10 opacity-50 dark:opacity-70"
+        style={{
+          background: `radial-gradient(ellipse 80% 50% at 50% -10%, hsl(var(--primary) / 0.12), transparent),
+                       radial-gradient(ellipse 60% 40% at 80% 80%, hsl(var(--accent) / 0.08), transparent)`,
+        }}
+      />
+
+      {/* ── HERO ── */}
+      <section
+        ref={heroRef}
+        className="relative flex min-h-[100svh] items-center overflow-hidden px-4 pt-20 pb-8 sm:px-6 lg:px-8"
+      >
+        {/* Background grid */}
+        <div
+          className="absolute inset-0 -z-10 opacity-[0.02] dark:opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)`,
+            backgroundSize: "64px 64px",
+          }}
+        />
+
+        <motion.div style={{ opacity: heroOpacity, y: heroY }} className="mx-auto w-full max-w-container-xl">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-24">
+
+            {/* LEFT — content */}
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col items-start"
+            >
+              {/* Badge */}
+              <motion.div variants={itemVariants}>
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary-500/25 dark:border-primary-400/20 bg-primary-500/8 dark:bg-primary-400/10 px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-primary-600 dark:text-primary-400 mb-6">
+                  <Zap className="size-3" strokeWidth={2.5} />
+                  Built on Creditcoin L1
+                </div>
+              </motion.div>
+
+              {/* Headline */}
+              <motion.h1
+                variants={itemVariants}
+                className="text-[2.6rem] font-extrabold leading-[1.1] tracking-tight text-gray-900 dark:text-white sm:text-[3.5rem] xl:text-[4.25rem]"
+              >
+                Your Reputation.{" "}
+                <span
+                  className="inline-block bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)",
+                  }}
+                >
+                  Your Credit.
+                </span>{" "}
+                <br className="hidden sm:block" />
+                On-Chain Forever.
+              </motion.h1>
+
+              {/* Sub-copy */}
+              <motion.p
+                variants={itemVariants}
+                className="mt-6 max-w-lg text-body-lg leading-relaxed text-gray-600 dark:text-gray-400"
+              >
+                CredTrust transforms your on-chain transaction history into a portable, trust-based credit profile — letting you borrow and lend globally without borders or collateral walls.
+              </motion.p>
+
+              {/* CTAs */}
+              <motion.div variants={itemVariants} className="mt-10 flex flex-wrap items-center gap-4">
+                <Link href="/loans/create">
+                  <Button
+                    size="lg"
+                    className="group h-13 gap-2 rounded-full px-8 text-[15px] font-semibold shadow-glow-primary transition-all duration-300 hover:shadow-glow-primary hover:scale-[1.02]"
+                  >
+                    Request a Loan
+                    <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" strokeWidth={2.5} />
+                  </Button>
+                </Link>
+                <Link href="/loans">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="h-13 rounded-full px-8 text-[15px] font-semibold dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                  >
+                    Browse Market
+                  </Button>
+                </Link>
+              </motion.div>
+
+              {/* Social proof */}
+              <motion.div
+                variants={itemVariants}
+                className="mt-10 flex flex-wrap items-center gap-6 border-t border-border/40 pt-8"
+              >
+                {[
+                  { label: "Verified Loans", value: "2,400+" },
+                  { label: "Avg. Credit Score", value: "740" },
+                  { label: "Protocol TVL", value: "$1.2M" },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div className="text-h4 font-extrabold tracking-tight text-gray-900 dark:text-white">{s.value}</div>
+                    <div className="text-caption text-gray-500 dark:text-gray-500">{s.label}</div>
+                  </div>
+                ))}
+              </motion.div>
+            </motion.div>
+
+            {/* RIGHT — Motion Graphic */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.9, ease: easeCustom, delay: 0.2 }}
+              className="flex items-center justify-center"
+            >
+              <TrustMesh />
+            </motion.div>
+          </div>
+
+          {/* Scroll hint */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="order-1 flex min-h-[240px] justify-center sm:min-h-[280px] md:min-h-[320px] lg:order-2 lg:min-h-[360px] xl:min-h-[400px]"
+            transition={{ delay: 1.5, duration: 0.8 }}
+            className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 lg:flex"
           >
-            <HeroMotionGraphic />
+            <span className="text-caption text-gray-400 dark:text-gray-600 tracking-widest uppercase">Scroll</span>
+            <motion.div
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChevronDown className="size-4 text-gray-400 dark:text-gray-600" />
+            </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Stats strip */}
-      <RevealSection>
-        <section className="border-y border-gray-200 bg-surface py-6 sm:py-8 md:py-10">
-          <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 gap-4 xs:gap-6 sm:gap-8">
-              {[
-                { value: "0%", label: "Forced Liquidation" },
-                { value: "$10M+", label: "Credit Capacity" },
-                { value: "2k+", label: "Active Scores" },
-                { value: "100%", label: "On-Chain" },
-              ].map(({ value, label }, i) => (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="text-center"
-                >
-                  <p className="text-h4 font-bold text-gray-900 sm:text-h3">{value}</p>
-                  <p className="mt-1 text-caption text-gray-500 sm:text-small">{label}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-      </RevealSection>
-
-      {/* Features */}
-      <section className="mx-auto max-w-container-xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:px-8 lg:py-24">
-        <RevealSection>
-          <div className="mb-10 text-center sm:mb-14">
-            <h2 className="text-h3 font-bold text-gray-900 sm:text-h2">
-              Built for Trustless Finance
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-body text-gray-600 sm:mt-4">
-              Our protocol layers transparency and reputation onto lending logic.
-            </p>
-          </div>
-        </RevealSection>
-
-        <div className="grid gap-4 xs:gap-5 sm:grid-cols-2 sm:gap-6 md:gap-6 lg:grid-cols-4 lg:gap-8">
-          {[
-            {
-              icon: Shield,
-              title: "Portable Reputation",
-              desc: "Your credit score lives on-chain. Use it across the ecosystem.",
-              delay: 0,
-            },
-            {
-              icon: Wallet,
-              title: "No Heavy Collateral",
-              desc: "Access capital based on repayment history, not over-collateralisation.",
-              delay: 0.08,
-            },
-            {
-              icon: TrendingUp,
-              title: "Transparent Risk",
-              desc: "Lenders see borrower history. Borrowers know exactly how they're scored.",
-              delay: 0.16,
-            },
-            {
-              icon: Shield,
-              title: "Trustless Execution",
-              desc: "Smart contracts handle loans and repayments. No intermediaries.",
-              delay: 0.24,
-            },
-          ].map(({ icon: Icon, title, desc, delay }, i) => (
-            <RevealSection key={title} delay={delay}>
-              <motion.div
-                whileHover={{ y: -4, transition: { duration: 0.25 } }}
-                transition={{ duration: 0.25 }}
-              >
-                <Card
-                  variant="elevated"
-                  className="h-full border-gray-200/80 transition-shadow duration-300 hover:shadow-elevation-2"
-                >
-                  <CardHeader>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.4, delay: delay + 0.1 }}
-                      className="mb-3 flex size-11 items-center justify-center rounded-lg bg-primary-500/10 text-primary-600"
-                    >
-                      <Icon className="size-5 sm:size-6" strokeWidth={1.5} aria-hidden />
-                    </motion.div>
-                    <CardTitle className="text-h4 text-gray-900">{title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-small leading-relaxed text-gray-600 sm:text-body">{desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </RevealSection>
-          ))}
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-gray-200 bg-surface py-16 sm:py-20 lg:py-24">
+      {/* ── SOCIAL PROOF BAR ── */}
+      <section className="section-border-top border-b border-border/40 bg-surface/50 dark:bg-surface/30 py-8">
         <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
           <RevealSection>
-            <div className="mb-12 text-center sm:mb-16">
-              <h2 className="text-h3 font-bold text-gray-900 sm:text-h2">
-                How CredTrust Works
+            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16">
+              {[
+                { icon: Users, value: "12,000+", label: "Active Users" },
+                { icon: Globe, value: "40+", label: "Countries" },
+                { icon: Shield, value: "100%", label: "On-Chain Trust" },
+                { icon: BarChart3, value: "$0", label: "Collateral Needed" },
+              ].map((s) => (
+                <StatCard key={s.label} value={s.value} label={s.label} icon={s.icon} />
+              ))}
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* ── PROBLEM / SOLUTION ── */}
+      <section className="relative py-24 sm:py-32">
+        <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+              <div className="mb-4 inline-block rounded-full border border-border px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                The Problem
+              </div>
+              <h2 className="text-h1 font-extrabold tracking-tight text-gray-900 dark:text-white">
+                Traditional credit is{" "}
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, #ef4444, #f97316)" }}>
+                  broken.
+                </span>
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-body text-gray-600 sm:mt-4">
-                Simple steps to access or provide credit on-chain.
+              <p className="mt-4 text-body-lg text-gray-500 dark:text-gray-400">
+                Billions globally are locked out of credit by geography, lack of collateral, or opaque scoring systems they can never improve.
               </p>
             </div>
           </RevealSection>
 
-          <div className="grid gap-10 sm:grid-cols-3 sm:gap-8 md:gap-10 lg:gap-12">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
-              { icon: Wallet, step: "1", title: "Connect Wallet", desc: "Link your Web3 wallet to access the protocol." },
-              { icon: CreditCard, step: "2", title: "Create or Fund", desc: "Request a loan as a borrower or fund requests as a lender." },
-              { icon: Zap, step: "3", title: "Repay & Build", desc: "Repay on time to build your on-chain credit score." },
-            ].map(({ icon: Icon, step, title, desc }, i) => (
-              <RevealSection key={step} delay={i * 0.1}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="relative flex flex-col items-center text-center"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="flex size-14 items-center justify-center rounded-full bg-primary-500/10 text-primary-600 sm:size-16"
-                  >
-                    <Icon className="size-6 sm:size-7" strokeWidth={1.5} />
-                  </motion.div>
-                  <span className="mt-3 text-caption font-semibold text-primary-600">Step {step}</span>
-                  <h3 className="mt-1 text-h4 font-semibold text-gray-900">{title}</h3>
-                  <p className="mt-2 max-w-[260px] text-small leading-relaxed text-gray-600">{desc}</p>
-                </motion.div>
+              {
+                icon: Globe,
+                title: "Geographical Barriers",
+                desc: "Credit is tied to local borders, leaving billions in underbanked regions without access.",
+                color: "primary",
+              },
+              {
+                icon: Lock,
+                title: "Collateral Walls",
+                desc: "Requiring 150%+ collateral defeats the purpose of borrowing entirely.",
+                color: "accent",
+              },
+              {
+                icon: BarChart3,
+                title: "Opaque Scoring",
+                desc: "Centralised bureaus use algorithms users can't see, verify, or meaningfully improve.",
+                color: "primary",
+              },
+            ].map((item, i) => (
+              <RevealSection key={item.title} delay={i * 0.1}>
+                <GlowCard glowColor={item.color as "primary" | "accent"}>
+                  <div className={`mb-4 flex size-11 items-center justify-center rounded-xl bg-${item.color}-500/10 dark:bg-${item.color}-400/10`}>
+                    <item.icon className={`size-5 text-${item.color}-600 dark:text-${item.color}-400`} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="mb-2 font-bold text-gray-900 dark:text-white">{item.title}</h3>
+                  <p className="text-small leading-relaxed text-gray-500 dark:text-gray-400">{item.desc}</p>
+                </GlowCard>
+              </RevealSection>
+            ))}
+          </div>
+
+          {/* Solution Block */}
+          <RevealSection delay={0.1}>
+            <div className="mt-12 overflow-hidden rounded-3xl relative">
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(188,94%,35%) 100%)",
+                }}
+              />
+              <div className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: "radial-gradient(circle at 70% 50%, white 0%, transparent 60%)",
+                }}
+              />
+              <div className="relative z-10 grid grid-cols-1 gap-8 p-8 sm:p-12 lg:grid-cols-2 lg:items-center lg:gap-16">
+                <div>
+                  <div className="mb-4 inline-block rounded-full border border-white/20 px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-white/80">
+                    The Solution
+                  </div>
+                  <h3 className="text-h2 font-extrabold text-white">The CredTrust Protocol</h3>
+                  <p className="mt-4 text-body leading-relaxed text-white/80">
+                    By leveraging Creditcoin&apos;s L1 infrastructure, we turn repayment history into a portable, on-chain reputation asset you own forever.
+                  </p>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    "Global Access: Borrow from anywhere, lend to anywhere.",
+                    "Reputation over Assets: Your history is your collateral.",
+                    "Immutable Records: Good repayment history is etched on-chain.",
+                    "Trustless Execution: Smart contracts, zero middlemen.",
+                  ].map((point) => (
+                    <li key={point} className="flex items-start gap-3">
+                      <CheckCircle className="mt-0.5 size-5 shrink-0 text-white/80" strokeWidth={2} />
+                      <span className="text-small font-medium text-white/90">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section className="section-border-top py-24 sm:py-32">
+        <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+              <div className="mb-4 inline-block rounded-full border border-border px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                Features
+              </div>
+              <h2 className="text-h1 font-extrabold tracking-tight text-gray-900 dark:text-white">
+                Built for the{" "}
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))" }}>
+                  next billion
+                </span>
+              </h2>
+            </div>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: Globe,
+                title: "Portable Reputation",
+                desc: "Your credit profile travels with you across chains, wallets, and borders.",
+                glowColor: "primary" as const,
+              },
+              {
+                icon: Shield,
+                title: "No Heavy Collateral",
+                desc: "Replace asset lock-ups with on-chain trust and repayment history.",
+                glowColor: "accent" as const,
+              },
+              {
+                icon: BarChart3,
+                title: "Transparent Risk",
+                desc: "Trust scores are fully auditable — no black-box algorithms.",
+                glowColor: "primary" as const,
+              },
+              {
+                icon: Zap,
+                title: "Instant Settlement",
+                desc: "Smart contracts execute funds the moment conditions are met.",
+                glowColor: "accent" as const,
+              },
+            ].map((f, i) => (
+              <RevealSection key={f.title} delay={i * 0.08}>
+                <GlowCard glowColor={f.glowColor} className="h-full">
+                  <div className={`mb-5 flex size-12 items-center justify-center rounded-2xl ${f.glowColor === "primary" ? "bg-primary-500/10 dark:bg-primary-400/10" : "bg-accent-500/10 dark:bg-accent-400/10"}`}>
+                    <f.icon className={`size-6 ${f.glowColor === "primary" ? "text-primary-600 dark:text-primary-400" : "text-accent-600 dark:text-accent-400"}`} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="mb-2 text-h4 font-bold text-gray-900 dark:text-white">{f.title}</h3>
+                  <p className="text-small leading-relaxed text-gray-500 dark:text-gray-400">{f.desc}</p>
+                </GlowCard>
               </RevealSection>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Banner */}
-      <RevealSection>
-        <section className="mx-auto max-w-container-xl px-4 py-12 sm:px-6 sm:py-16 md:py-20 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="overflow-hidden rounded-2xl bg-gray-900 px-6 py-10 sm:px-8 sm:py-12 md:px-10 md:py-14"
-          >
-            <div className="flex flex-col gap-6 sm:gap-8 md:gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-              <div>
-                <h3 className="text-h3 font-bold text-white sm:text-h2">
-                  Decentralised credit is the missing piece of DeFi.
-                </h3>
-                <p className="mt-3 text-body text-gray-400 sm:mt-4">
-                  Join the protocol that turns history into collateral.
-                </p>
+      {/* ── HOW IT WORKS ── */}
+      <section className="section-border-top py-24 sm:py-32 bg-surface/30 dark:bg-surface/20">
+        <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+              <div className="mb-4 inline-block rounded-full border border-border px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                How It Works
               </div>
-              <div className="flex shrink-0 flex-col gap-3 xs:flex-row xs:flex-wrap sm:gap-4">
-                <Link href="/loans/create">
-                  <Button size="lg" className="w-full shadow-glow-primary sm:w-auto">
-                    Create Loan Request
-                  </Button>
-                </Link>
-                <Link href="/loans">
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 sm:w-auto"
-                  >
-                    Browse Markets
-                  </Button>
-                </Link>
+              <h2 className="text-h1 font-extrabold tracking-tight text-gray-900 dark:text-white">
+                Simple as <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)))" }}>1, 2, 3</span>
+              </h2>
+            </div>
+          </RevealSection>
+
+          <div className="relative grid grid-cols-1 gap-6 md:grid-cols-3">
+            {/* Connectors */}
+            <div className="absolute inset-x-0 top-10 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block" />
+
+            {[
+              { step: "01", icon: Wallet, title: "Connect Wallet", desc: "Link your Web3 wallet to establish your on-chain identity on the Creditcoin network." },
+              { step: "02", icon: TrendingUp, title: "Build Reputation", desc: "Borrow, repay, and grow your credit score organically through real on-chain behaviour." },
+              { step: "03", icon: Zap, title: "Access Capital", desc: "Unlock loans globally backed by your reputation — not your real-world assets." },
+            ].map((step, i) => (
+              <RevealSection key={step.step} delay={i * 0.12}>
+                <div className="relative flex flex-col items-center gap-4 text-center p-8 glass-card rounded-2xl">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full border border-border bg-surface px-3 py-0.5 text-caption font-bold tabular-nums text-gray-400">
+                    {step.step}
+                  </div>
+                  <div className="flex size-14 items-center justify-center rounded-2xl bg-primary-500/10 dark:bg-primary-400/10 mt-4">
+                    <step.icon className="size-7 text-primary-500 dark:text-primary-400" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-h4 font-bold text-gray-900 dark:text-white">{step.title}</h3>
+                  <p className="text-small leading-relaxed text-gray-500 dark:text-gray-400">{step.desc}</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS / REVIEWS ── */}
+      <section className="section-border-top py-24 sm:py-32">
+        <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+              <div className="mb-4 inline-block rounded-full border border-border px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                Community
+              </div>
+              <h2 className="text-h1 font-extrabold tracking-tight text-gray-900 dark:text-white">
+                Trusted by real users
+              </h2>
+            </div>
+          </RevealSection>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { name: "Amara O.", role: "DeFi Entrepreneur, Lagos", quote: "CredTrust gave me access to capital that no traditional bank in my country would offer. My on-chain score speaks for itself.", rating: 5 },
+              { name: "David T.", role: "Independent Lender, Berlin", quote: "The reputation system is incredibly transparent. I can lend with confidence — all the data is right there on the blockchain.", rating: 5 },
+              { name: "Sofia R.", role: "Freelance Developer, São Paulo", quote: "I repaid my first loan in 30 days and my credit score jumped significantly. Real incentives for responsible behaviour.", rating: 5 },
+            ].map((t, i) => (
+              <RevealSection key={t.name} delay={i * 0.1}>
+                <GlowCard className="h-full flex flex-col gap-4">
+                  <div className="flex gap-1">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <Star key={j} className="size-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="flex-1 text-small leading-relaxed text-gray-600 dark:text-gray-300 italic">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 border-t border-border/40 pt-4">
+                    <div className="flex size-9 items-center justify-center rounded-full bg-primary-500/15 text-caption font-bold text-primary-600 dark:text-primary-400">
+                      {t.name[0]}
+                    </div>
+                    <div>
+                      <div className="text-small font-semibold text-gray-900 dark:text-white">{t.name}</div>
+                      <div className="text-caption text-gray-400">{t.role}</div>
+                    </div>
+                  </div>
+                </GlowCard>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="section-border-top bg-surface/30 dark:bg-surface/20 py-24 sm:py-32">
+        <div className="mx-auto max-w-container-md px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="mb-16 text-center">
+              <div className="mb-4 inline-block rounded-full border border-border px-4 py-1.5 text-caption font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                FAQ
+              </div>
+              <h2 className="text-h1 font-extrabold tracking-tight text-gray-900 dark:text-white">Have questions?</h2>
+            </div>
+          </RevealSection>
+          <div className="space-y-4">
+            {[
+              { q: "Is collateral required to borrow?", a: "No. CredTrust uses your on-chain repayment history and reputation score as the basis for lending — no physical collateral required." },
+              { q: "How is my credit score calculated?", a: "Your score is computed from your wallet's repayment history, loan volume, timeliness, and overall on-chain activity recorded on the Creditcoin blockchain." },
+              { q: "Can I lose my credit score?", a: "Yes — defaulting on a loan will negatively impact your reputation score. This creates strong incentives to repay, making the system trustworthy for lenders." },
+              { q: "What network does CredTrust run on?", a: "CredTrust is built on the Creditcoin L1 network, purpose-built for credit history and loan settlement." },
+              { q: "Are smart contracts audited?", a: "All CredTrust smart contracts are open-source and undergo independent security audits. You can review them directly on-chain." },
+            ].map((faq, i) => (
+              <FAQItem key={i} question={faq.q} answer={faq.a} delay={i * 0.06} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA BANNER ── */}
+      <section className="section-border-top py-24 sm:py-32">
+        <div className="mx-auto max-w-container-xl px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="relative overflow-hidden rounded-3xl px-8 py-16 text-center sm:px-16 sm:py-20">
+              {/* Gradient background */}
+              <div
+                className="absolute inset-0 -z-0"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(188,94%,30%) 100%)",
+                }}
+              />
+              {/* Decorative orbs */}
+              <div className="absolute top-0 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+              <div className="absolute bottom-0 -left-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+              <div className="relative z-10">
+                <h2 className="text-h1 font-extrabold text-white">
+                  Start building your<br className="hidden sm:block" /> financial reputation today.
+                </h2>
+                <p className="mx-auto mt-4 max-w-xl text-body text-white/80">
+                  Join thousands of users who are accessing global capital through the power of on-chain trust.
+                </p>
+                <div className="mt-10 flex flex-wrap justify-center gap-4">
+                  <Link href="/loans/create">
+                    <Button
+                      size="lg"
+                      className="h-13 rounded-full bg-white px-8 text-[15px] font-bold text-primary-600 shadow-glow-primary hover:bg-white/90 hover:scale-[1.02] transition-all duration-200"
+                    >
+                      Request a Loan
+                      <ArrowRight className="ml-2 size-4" strokeWidth={2.5} />
+                    </Button>
+                  </Link>
+                  <Link href="/loans">
+                    <Button
+                      size="lg"
+                      variant="secondary"
+                      className="h-13 rounded-full border-white/30 bg-white/10 px-8 text-[15px] font-semibold text-white hover:bg-white/20"
+                    >
+                      Browse Lending Market
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
-          </motion.div>
-        </section>
-      </RevealSection>
+          </RevealSection>
+        </div>
+      </section>
 
-      <footer className="border-t border-gray-200 py-8 text-center sm:py-10 md:py-12">
-        <p className="text-caption text-gray-500 sm:text-small">
-          © 2026 CredTrust Protocol. Built on Creditcoin.
-        </p>
+      {/* ── FOOTER ── */}
+      <footer className="section-border-top bg-surface/50 dark:bg-surface/30">
+        <div className="mx-auto max-w-container-xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            <div className="col-span-2 md:col-span-1">
+              <div className="text-h4 font-extrabold tracking-tight text-gray-900 dark:text-white">CredTrust</div>
+              <p className="mt-2 text-small leading-relaxed text-gray-500 dark:text-gray-400">
+                On-chain credit for the borderless economy.
+              </p>
+            </div>
+            <div>
+              <h4 className="mb-4 text-caption font-bold uppercase tracking-widest text-gray-400">Protocol</h4>
+              <ul className="space-y-2">
+                {["Browse Loans", "Request Loan", "Dashboard", "Docs"].map((l) => (
+                  <li key={l}><a href="#" className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{l}</a></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="mb-4 text-caption font-bold uppercase tracking-widest text-gray-400">Company</h4>
+              <ul className="space-y-2">
+                {["About", "Blog", "Security", "Careers"].map((l) => (
+                  <li key={l}><a href="#" className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{l}</a></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="mb-4 text-caption font-bold uppercase tracking-widest text-gray-400">Legal</h4>
+              <ul className="space-y-2">
+                {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((l) => (
+                  <li key={l}><a href="#" className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">{l}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-8 sm:flex-row">
+            <p className="text-caption text-gray-400">© {new Date().getFullYear()} CredTrust. All rights reserved.</p>
+            <p className="text-caption text-gray-400">Built on <span className="font-semibold text-primary-500 dark:text-primary-400">Creditcoin</span></p>
+          </div>
+        </div>
       </footer>
+
+      <ConnectPrompt />
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// FAQ ACCORDION ITEM
+// ──────────────────────────────────────────────────────────────────────────────
+function FAQItem({ question, answer, delay }: { question: string; answer: string; delay: number }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 16 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay, ease: easeCustom }}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-4 rounded-2xl glass-card p-5 text-left transition-all duration-200 hover:shadow-glow-primary"
+      >
+        <span className="font-semibold text-gray-900 dark:text-white">{question}</span>
+        <motion.div
+          animate={{ rotate: open ? 45 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ArrowRight className="size-4 shrink-0 text-gray-400" style={{ transform: open ? "rotate(45deg)" : "none" }} />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: easeCustom }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-4 pt-2 text-small leading-relaxed text-gray-500 dark:text-gray-400">
+              {answer}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

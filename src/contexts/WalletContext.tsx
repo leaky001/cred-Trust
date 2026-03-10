@@ -20,27 +20,16 @@ type WalletState = {
 type WalletContextValue = WalletState & {
   connect: () => Promise<void>;
   disconnect: () => void;
+  switchNetwork: (chainId: string) => Promise<void>;
   signer: JsonRpcSigner | null;
   hasWallet: boolean;
 };
 
 const WalletContext = createContext<WalletContextValue | null>(null);
 
-function getEthereumProvider(): unknown {
-  if (typeof window === "undefined") return null;
-  const w = window as Window & {
-    ethereum?: unknown & { providers?: unknown[]; isMetaMask?: boolean };
-  };
-  const eth = w.ethereum;
-  if (!eth) return null;
-  // Multiple wallets: pick MetaMask or first available
-  if (Array.isArray((eth as { providers?: any[] }).providers)) {
-    const providers = (eth as { providers: any[] }).providers;
-    const mm = providers.find((p: any) => p?.isMetaMask);
-    return mm ?? providers[0] ?? eth;
-  }
-  return eth;
-}
+// Note: we intentionally create a safe provider accessor inside the
+// WalletProvider so it can be referenced from hooks and included in
+// dependency arrays without triggering the React hooks linter.
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
@@ -48,10 +37,95 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasWallet, setHasWallet] = useState(false);
+  const [ethereum, setEthereum] = useState<any | null>(null);
 
-  useEffect(() => {
-    setHasWallet(!!getEthereumProvider());
+  // Safer window.ethereum proxy to avoid conflicts. Put inside the
+  // component and wrap with useCallback so it can be referenced from
+  // effects/callbacks and included in dependency arrays.
+  const getEthereumProvider = useCallback((): any => {
+    if (typeof window === "undefined") return null;
+    try {
+      const w = window as any;
+      const eth = w.ethereum;
+      if (!eth) return null;
+
+      // If multiple wallets are injected (e.g. MetaMask + Coinbase)
+      if (eth.providers?.length) {
+        const mm = eth.providers.find((p: any) => p?.isMetaMask);
+        return mm || eth.providers[0];
+      }
+
+      return eth;
+    } catch (err) {
+      // Some browser extensions may throw while trying to redefine or access
+      // `window.ethereum` (we've seen 'Cannot redefine property: ethereum').
+      // In that case, avoid crashing the app and report that no provider
+      // is currently available — callers will retry or surface a friendly
+      // error to the user.
+      // eslint-disable-next-line no-console
+      console.warn('Error accessing window.ethereum, will treat as no provider for now:', err);
+      return null;
+    }
   }, []);
+
+  // Poll for an injected provider for a short window to avoid races with
+  // extensions that inject asynchronously. This prevents the app from
+  // showing a hard "no wallet" state while MetaMask is still initializing.
+  useEffect(() => {
+    let mounted = true;
+    let attempts = 0;
+    const maxAttempts = 8;
+    const delayMs = 500;
+
+    const check = () => {
+      attempts += 1;
+      try {
+        const eth = getEthereumProvider();
+        if (eth) {
+          if (!mounted) return;
+          setEthereum(eth);
+          setHasWallet(true);
+          return;
+        }
+      } catch (e) {
+        // ignored — getEthereumProvider already logs warnings
+      }
+
+      if (attempts < maxAttempts && mounted) {
+        setTimeout(check, delayMs);
+      } else if (mounted) {
+        setHasWallet(false);
+      }
+    };
+
+    check();
+
+    return () => {
+      mounted = false;
+    };
+  }, [getEthereumProvider]);
+
+  // Auto-reconnect: silently restore previously connected wallet on page load.
+  // Uses eth_accounts (no popup) — only succeeds if user already approved the site.
+  useEffect(() => {
+    if (!ethereum) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const accounts = (await ethereum.request({ method: "eth_accounts" })) as string[];
+        if (cancelled || !accounts?.[0]) return;
+        const browserProvider = new BrowserProvider(ethereum);
+        const signerInstance = await browserProvider.getSigner();
+        setAddress(accounts[0]);
+        setSigner(signerInstance);
+      } catch {
+        // Silent — user simply isn't connected yet
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [ethereum]);
+
+
 
   const connect = useCallback(async () => {
     const ethereum = getEthereumProvider();
@@ -64,59 +138,52 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     const attempt = async (): Promise<void> => {
-      const provider = ethereum as { request: (args: { method: string }) => Promise<unknown> };
-      const accounts = (await provider.request({
-        method: "eth_requestAccounts",
-      })) as string[] | undefined;
+      try {
+        const accounts = (await ethereum.request({
+          method: "eth_requestAccounts",
+        })) as string[] | undefined;
 
-      if (!accounts?.[0]) {
-        setError("No accounts returned. Unlock MetaMask and try again.");
-        return;
+        if (!accounts?.[0]) {
+          setError("No accounts returned. Unlock MetaMask and try again.");
+          return;
+        }
+
+        const browserProvider = new BrowserProvider(ethereum);
+        const signerInstance = await browserProvider.getSigner();
+
+        setAddress(accounts[0]);
+        setSigner(signerInstance);
+      } catch (err: any) {
+        // Handle "Request already pending" or other internal errors
+        if (err.code === -32002) {
+          setError("Connection request already pending in MetaMask. Please check your extension.");
+        } else if (err.code === -32603 || (err.message && String(err.message).includes('Internal JSON-RPC error'))) {
+          // MetaMask sometimes surfaces -32603 when the wallet backend (or local node)
+          // returns an internal error. Surface a friendly hint to the user.
+          setError("Wallet RPC error: Internal JSON-RPC error. Ensure your node (e.g. Hardhat) is running and MetaMask is connected to the correct network.");
+        } else {
+          throw err;
+        }
       }
-
-      const browserProvider = new BrowserProvider(ethereum as import("ethers").Eip1193Provider);
-      const signerInstance = await browserProvider.getSigner();
-
-      setAddress(accounts[0]);
-      setSigner(signerInstance);
     };
 
     try {
       await attempt();
-    } catch (err) {
-      const raw = err instanceof Error ? err.message : String(err);
+    } catch (err: any) {
+      const raw = err.message || String(err);
       const isRejected = raw.includes("reject") || raw.includes("denied") || raw.includes("User denied");
-      const isExtNotFound =
-        raw.includes("MetaMask extension not found") ||
-        raw.includes("extension not found");
 
       if (isRejected) {
         setError("Connection cancelled. Click Connect again when ready.");
-      } else if (isExtNotFound) {
-        // MetaMask's background script may not be ready — retry after a short delay
-        await new Promise((r) => setTimeout(r, 1500));
-        try {
-          await attempt();
-        } catch (retryErr) {
-          setError(
-            "MetaMask couldn't connect. Try: 1) Refresh the page 2) Unlock MetaMask 3) Restart Chrome 4) Click Connect again"
-          );
-          setAddress(null);
-          setSigner(null);
-        }
       } else {
-        setError(
-          isExtNotFound
-            ? "MetaMask couldn't connect. Refresh the page, unlock MetaMask, then try again."
-            : raw
-        );
+        setError(raw);
         setAddress(null);
         setSigner(null);
       }
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [getEthereumProvider]);
 
   const disconnect = useCallback(() => {
     setAddress(null);
@@ -125,27 +192,60 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const ethereum = getEthereumProvider() as { on?: (event: string, cb: (args: unknown) => void) => void } | null;
-    if (!ethereum?.on) return;
+    const eth = ethereum || getEthereumProvider();
+    if (!eth?.on) return;
 
-    const handleAccountsChanged = (accounts: unknown) => {
-      const list = accounts as string[];
-      if (list.length === 0) disconnect();
-      else setAddress(list[0]);
+    const handleAccountsChanged = (accounts: any) => {
+      if (!accounts || accounts.length === 0) disconnect();
+      else setAddress(accounts[0]);
     };
 
     const handleChainChanged = () => {
       window.location.reload();
     };
 
-    ethereum.on("accountsChanged", handleAccountsChanged);
-    ethereum.on("chainChanged", handleChainChanged);
+    eth.on("accountsChanged", handleAccountsChanged);
+    eth.on("chainChanged", handleChainChanged);
 
     return () => {
-      (ethereum as { removeListener?: (e: string, cb: (args: unknown) => void) => void }).removeListener?.("accountsChanged", handleAccountsChanged);
-      (ethereum as { removeListener?: (e: string, cb: () => void) => void }).removeListener?.("chainChanged", handleChainChanged);
+      eth.removeListener?.("accountsChanged", handleAccountsChanged);
+      eth.removeListener?.("chainChanged", handleChainChanged);
     };
-  }, [disconnect]);
+  }, [disconnect, ethereum, getEthereumProvider]);
+
+  const switchNetwork = useCallback(async (chainId: string) => {
+    const ethereum = getEthereumProvider();
+    if (!ethereum) throw new Error("No wallet found");
+
+    const hexChainId = `0x${Number(chainId).toString(16)}`;
+    try {
+      await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: hexChainId }],
+      });
+    } catch (switchError: any) {
+      // Error 4902 means the chain has not been added to MetaMask.
+      if (switchError.code === 4902) {
+        try {
+          await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: hexChainId,
+                chainName: chainId === "31337" ? "Hardhat Local" : "Creditcoin Testnet",
+                rpcUrls: chainId === "31337" ? ["http://127.0.0.1:8545"] : ["https://rpc.cc3-testnet.creditcoin.network"],
+                nativeCurrency: { name: "Creditcoin", symbol: "CTC", decimals: 18 },
+              },
+            ],
+          });
+        } catch (addError) {
+          throw new Error("Failed to add network to wallet");
+        }
+      } else {
+        throw new Error(switchError.message || "Failed to switch network");
+      }
+    }
+  }, [getEthereumProvider]);
 
   const value: WalletContextValue = {
     address,
@@ -154,6 +254,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     error,
     connect,
     disconnect,
+    switchNetwork,
     signer,
     hasWallet,
   };
